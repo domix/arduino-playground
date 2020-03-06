@@ -32,6 +32,13 @@ Bounce debouncerOn = Bounce();
 Bounce debouncerOption = Bounce();
 Bounce debouncerSelect = Bounce();
 
+
+Bounce debouncerUp = Bounce();
+Bounce debouncerDown = Bounce();
+Bounce debouncerRight = Bounce();
+Bounce debouncerLeft = Bounce();
+
+
 extern Heltec_ESP32 Heltec;
 OLEDDisplayUi ui( Heltec.display );
 Preferences prefs;
@@ -73,16 +80,16 @@ BLECharacteristic *pRigMovement;
 #define optionButton GPIO_NUM_32
 #define selectButton GPIO_NUM_33
 
+#define upButton GPIO_NUM_35
+#define downButton GPIO_NUM_36
+#define rightButton GPIO_NUM_22
+#define leftButton GPIO_NUM_5
+
 //direcciones
 #define outUp GPIO_NUM_13
 #define outDown GPIO_NUM_12
 #define outRight GPIO_NUM_14
 #define outLeft GPIO_NUM_27
-
-int X;
-int Y;
-int currentFila;
-int currentColumna;
 
 
 Movement lastMovement = MOV_INIT;
@@ -351,8 +358,22 @@ void setup() {
 
 
   //Joystick
-  pinMode(X_axis, INPUT);
-  pinMode(Y_axis, INPUT);
+  //pinMode(X_axis, INPUT);
+  //pinMode(Y_axis, INPUT);
+
+
+  debouncerUp.attach(upButton, INPUT_PULLUP);
+  debouncerUp.interval(BUTTON_DEBOUNCE_INTERVAL);
+
+  debouncerDown.attach(downButton, INPUT_PULLUP);
+  debouncerDown.interval(BUTTON_DEBOUNCE_INTERVAL);
+
+
+  debouncerRight.attach(rightButton, INPUT_PULLUP);
+  debouncerRight.interval(BUTTON_DEBOUNCE_INTERVAL);
+
+  debouncerLeft.attach(leftButton, INPUT_PULLUP);
+  debouncerLeft.interval(BUTTON_DEBOUNCE_INTERVAL);
   
   Serial.begin(115200);
   Heltec.begin(true /*DisplayEnable Enable*/, false /*LoRa Disable*/, true /*Serial Enable*/);
@@ -444,6 +465,13 @@ void loop() {
     return;
   }
 
+  debouncerUp.update(); // Update the Bounce instance
+  if ( debouncerUp.fell() ) {  // Call code if button transitions from HIGH to LOW
+    Serial.println("Up button");
+    buttonPressed = true;
+    return;
+  }
+
   //int Push_button_state = digitalRead(PUSH_BUTTON);
   //int optionButtonState = digitalRead(optionButton);
   //int sss = digitalRead(onButton);
@@ -462,17 +490,31 @@ void loop() {
   boolean joystickMoving = false;
 
   if (!buttonPressed) {
-    X = analogRead(X_axis);
-    Y = analogRead(Y_axis);
-
     boolean move = false;
-    boolean xMovement = false;
-    boolean yMovement = false;
+    //X = analogRead(X_axis);
+    //Y = analogRead(Y_axis);
 
-    int xVal = map(X, 0, 4095, 0, 5);
-    int yVal = map(Y, 0, 4095, 0, 5);
+    if(digitalRead(upButton) == HIGH) {
+      currentMovement = MOV_UP;
+      Serial.println("Move Up");
+      digitalWrite(outUp, HIGH);
+      digitalWrite(outDown, LOW);
+      digitalWrite(outRight, LOW);
+      digitalWrite(outLeft, LOW);
+      move=true;
+    }
 
-    if(X >= 3500){
+    if(digitalRead(downButton) == HIGH) {
+      currentMovement = MOV_DOWN;
+      Serial.println("Move Down");
+      digitalWrite(outDown, HIGH);
+      digitalWrite(outUp, LOW);
+      digitalWrite(outRight, LOW);
+      digitalWrite(outLeft, LOW);
+      move=true;
+    }
+
+    if(digitalRead(rightButton) == HIGH) {
       currentMovement = MOV_RIGHT;
       Serial.println("Move Right");
       digitalWrite(outRight, HIGH);
@@ -480,8 +522,9 @@ void loop() {
       digitalWrite(outDown, LOW);
       digitalWrite(outLeft, LOW);
       move=true;
-    }    
-    if(X <= 2800){
+    }
+
+    if(digitalRead(leftButton) == HIGH) {
       currentMovement = MOV_LEFT;
       Serial.println("Move Left");
       digitalWrite(outLeft, HIGH);
@@ -490,32 +533,30 @@ void loop() {
       digitalWrite(outRight, LOW);
       move=true;
     }
+
+
+    /*
+    if(X >= 3500){
+      
+    }    
+    if(X <= 2800){
+      
+    }
     if(Y >= 3500 && !move){
-      currentMovement = MOV_DOWN;
-      Serial.println("Move Down");
-      digitalWrite(outDown, HIGH);
-      digitalWrite(outUp, LOW);
-      digitalWrite(outRight, LOW);
-      digitalWrite(outLeft, LOW);
-      move=true;
+      
     }    
     if(Y <= 2800 && !move){
-      currentMovement = MOV_UP;
-      Serial.println("Move Up");
-      digitalWrite(outUp, HIGH);
-      digitalWrite(outDown, LOW);
-      digitalWrite(outRight, LOW);
-      digitalWrite(outLeft, LOW);
-      move=true;
+      
     }    
-
+    */
     if(move) {
-      Serial.print("X: ");
+      /*Serial.print("X: ");
       Serial.println(X);
       Serial.print("Y: ");
       Serial.println(Y);
       Serial.println("===============");
       //delay(800);
+      */
     } else {
       currentMovement = MOV_STOP;
       digitalWrite(outUp, LOW);
